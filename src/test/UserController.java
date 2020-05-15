@@ -37,9 +37,9 @@ public class UserController {
 		return userInfo;
 	}
 	
-	public static boolean updateUserInfo(String account, String password, HashMap<String, Object> map) throws SQLException {
+	public static boolean updateUserInfo(String account, HashMap<String, Object> map) throws SQLException {
 		boolean result = false;
-		String sql = "SELECT * FROM Account WHERE username='" + account + "' AND password = '" + password + "'";	
+		String sql = "SELECT * FROM Account WHERE username='" + account + "'";	
 		PreparedStatement stmt = db.conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 		ResultSet rs = stmt.executeQuery();
 		if(rs.next()) {
