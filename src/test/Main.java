@@ -10,6 +10,7 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -41,19 +42,24 @@ public class Main {
 		System.out.println("Account: " + account);
 		System.out.println("Password: " + password);
 		JSONObject json = new JSONObject();
+		NewCookie cookie;
+		Response response;
 		if(resultArray[0] == 1) {
 			json.put("type", resultArray[1]);
 			json.put("username", account);
 			json.put("status", "Success");
+			URI myUri = uri.getBaseUri();
+			URI path = uri.getAbsolutePath();
+			cookie = new NewCookie("currentUser", account, path.getHost(), myUri.getHost(), null, 7200, false);
+			response = Response.ok(json.toString()).cookie(cookie).build();
 		}
 		else {
 			json.put("status", "Fail");
+			response = Response.ok(json.toString()).build();
 		}
-		URI myUri = uri.getBaseUri();
-		URI path = uri.getAbsolutePath();
-		NewCookie cookie = new NewCookie("currentUser", account, path.toString(), myUri.toString(), null, 7200, false);
+		
 	
-		return Response.ok(json.toString()).cookie(cookie).build();
+		return response;
 	}
 	
 	
@@ -143,6 +149,53 @@ public class Main {
 			return Response.ok("Invalid session").build();
 		}
 	}
+	
+	@GET
+	@Path("/getproductinfo")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getProductInfo(@QueryParam("name") String name, @QueryParam("category") String category) throws SQLException, ClassNotFoundException, JSONException {
+		if(name==null)
+			name = "";
+		if(category == null)
+			category = "";
+		JSONArray arr = ProductController.getProduct(name, category);
+		return Response.ok(arr.toString()).build();
+	}
+	
+	@POST
+	@Path("/createproduct")
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response createProduct(@FormParam("name") String name, 
+									@FormParam("category") String category,
+									@FormParam("price") int price,
+									@FormParam("description") String description,
+									@FormParam("imageURL") String imageURL,
+									@CookieParam("currentUser") Cookie cookie
+									) throws SQLException, ClassNotFoundException, JSONException {
+		if(cookie != null) {
+			JSONObject obj = new JSONObject();
+			boolean status = ProductController.createProduct(name, category, description, price, imageURL);
+			if(!status) {
+				obj.put("status", "Failed/duplicate name");
+			}
+			else {
+				obj.put("status", "Success");
+			}
+			return Response.ok(obj.toString()).build();
+			
+		}
+		else {
+			JSONObject obj = new JSONObject();
+			obj.put("status", "Failed/unauthorized");
+			return Response.ok(obj.toString()).build();
+		}
+		
+	
+		
+	}
+	
+	
 	
 }
 
